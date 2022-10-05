@@ -1,0 +1,11 @@
+#! /usr/bin/env bash
+
+parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")"; cd ..; pwd -P )
+cd $parent_path
+
+DATASET="CIRCLES"
+P_TRAIN=0.6
+P_VAL=0.2
+P_TEST=0.2
+
+python convert_to_training --dataset $DATASET --p_train $P_TRAIN --p_val $P_VAL --p_test $P_TEST

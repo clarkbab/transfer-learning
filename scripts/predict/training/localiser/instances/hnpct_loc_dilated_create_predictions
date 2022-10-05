@@ -1,0 +1,52 @@
+#! /usr/bin/env bash
+
+parent_path=$( cd "$(dirname "${BASH_SOURCE[0]}")"; cd ..; pwd -P )
+cd $parent_path
+
+DATASET="HNPCT-LOC"
+PARTITIONS="validation"
+PREDICT_LOGITS=False
+RUN="public-dilated-400epochs"
+CHECKPOINTS=(
+    # 'loss=-0.705544-epoch=399-step=0' # BrachialPlexus_L
+    # 'loss=-0.739916-epoch=395-step=0' # BrachialPlexus_R
+    'loss=-0.936208-epoch=185-step=0' # Brain
+    'loss=-0.869437-epoch=207-step=0' # BrainStem
+    # 'loss=-0.525970-epoch=396-step=0' # Cochlea_L
+    # 'loss=-0.563503-epoch=399-step=0' # Cochlea_R
+    # 'loss=-0.526273-epoch=398-step=0' # Lens_L
+    # 'loss=-0.509516-epoch=399-step=0' # Lens_R
+    'loss=-0.920544-epoch=195-step=0' # Mandible
+    # 'loss=-0.813044-epoch=367-step=0' # OpticNerve_L
+    # 'loss=-0.830626-epoch=229-step=0' # OpticNerve_R
+    'loss=-0.736908-epoch=90-step=0' # OralCavity
+    'loss=-0.902783-epoch=193-step=0' # Parotid_L
+    'loss=-0.900478-epoch=205-step=0' # Parotid_R
+    'loss=-0.876759-epoch=186-step=0' # SpinalCord
+    'loss=-0.845896-epoch=311-step=0' # Submandibular_L
+    'loss=-0.853835-epoch=363-step=0' # Submandibular_R
+)
+REGIONS=(
+    # 'BrachialPlexus_L'
+    # 'BrachialPlexus_R'
+    'Brain'
+    'BrainStem'
+    # 'Cochlea_L'
+    # 'Cochlea_R'
+    # 'Lens_L'
+    # 'Lens_R'
+    'Mandible'
+    # 'OpticNerve_L'
+    # 'OpticNerve_R'
+    'OralCavity'
+    'Parotid_L'
+    'Parotid_R'
+    'SpinalCord'
+    'Submandibular_L'
+    'Submandibular_R'
+)
+
+for i in "${!REGIONS[@]}"; do
+    localiser="('localiser-${REGIONS[i]}','$RUN','${CHECKPOINTS[i]}')"
+    python create_predictions --dataset $DATASET --partitions $PARTITIONS --localiser $localiser --region ${REGIONS[i]} --predict_logits $PREDICT_LOGITS
+done

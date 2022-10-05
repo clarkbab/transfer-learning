@@ -1,0 +1,13 @@
+import fire
+import os
+import sys
+
+root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
+sys.path.append(root_dir)
+
+from mymi.evaluation.dataset.training import evaluate_localiser_predictions
+
+fire.Fire(evaluate_localiser_predictions)
+
+# Sample args:
+# --dataset PMCC-HN-TEST --localiser "(...)" --region Parotid_L

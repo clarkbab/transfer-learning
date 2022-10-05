@@ -1,0 +1,10 @@
+__pycache__
+*.pyc
+*.out
+.vscode
+build
+dist
+lightning_logs
+mymi.egg-info
+
+MNIST
