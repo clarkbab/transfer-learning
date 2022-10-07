@@ -1,9 +1,0 @@
-dataset,internal
-^brachialplex_l$,BrachialPlexus_L
-^brachialplex_r$,BrachialPlexus_R
-^bone_mandible$,Mandible
-^cavity_oral$,OralCavity
-^glnd_submand_l$,Submandibular_L
-^glnd_submand_r$,Submandibular_R
-^opticnrv_l$,OpticNerve_L
-^opticnrv_r$,OpticNerve_R

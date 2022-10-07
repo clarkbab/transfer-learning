@@ -166,7 +166,7 @@ def create_dataset(
     output_dataset: Optional[str] = None,
     use_gpu: bool = True) -> None:
     """
-    effect: generates a DICOMDataset of predictions.
+    effect: generates a DicomDataset of predictions.
     args:
         dataset: the dataset to create predictions from.
     kwargs:

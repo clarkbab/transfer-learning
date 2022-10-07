@@ -16,10 +16,10 @@ from mymi import logging
 from mymi.models.systems import Localiser
 
 def train_localiser(
-    model_name: str,
-    run_name: str,
     datasets: Union[str, List[str]],
     region: str,
+    model_name: str,
+    run_name: str,
     loss: str = 'dice',
     n_epochs: int = 200,
     n_folds: Optional[int] = None,

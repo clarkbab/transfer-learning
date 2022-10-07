@@ -11,7 +11,7 @@ from .region_map import RegionMap
 class DICOMPatient:
     def __init__(
         self,
-        dataset: 'DICOMDataset',
+        dataset: 'DicomDataset',
         id: types.PatientID,
         ct_from: Optional['DICOMPatient'] = None,
         load_default_rtstruct: bool = True,
@@ -21,44 +21,44 @@ class DICOMPatient:
         study_index: int = 0,
         trimmed: bool = False):
         if trimmed:
-            self._global_id = f"{dataset} - {id} (trimmed)"
+            self.__global_id = f"{dataset} - {id} (trimmed)"
         else:
-            self._global_id = f"{dataset} - {id}"
-        self._ct_from = ct_from
-        self._dataset = dataset
-        self._id = str(id)
-        self._trimmed = trimmed
-        self._region_map = region_map
+            self.__global_id = f"{dataset} - {id}"
+        self.__ct_from = ct_from
+        self.__dataset = dataset
+        self.__id = str(id)
+        self.__trimmed = trimmed
+        self.__region_map = region_map
 
         # Get patient index.
-        index = self._dataset.index
+        index = self.__dataset.index
         index = index[index['patient-id'] == str(id)]
-        self._index = index
+        self.__index = index
 
         # Check that patient ID exists.
         if len(index) == 0:
             raise ValueError(f"Patient '{self}' not found in index for dataset '{dataset}'.")
         
         if load_default_rtstruct:
-            self._load_default_rtstruct(study_index, rtstruct_index)
+            self.__load_default_rtstruct(study_index, rtstruct_index)
 
         if load_default_rtdose:
-            self._load_default_rtdose()
+            self.__load_default_rtdose()
 
     @property
     def description(self) -> str:
-        return self._global_id
+        return self.__global_id
 
     @property
     def id(self) -> str:
-        return self._id
+        return self.__id
 
     @property
     def index(self) -> pd.DataFrame:
-        return self._index
+        return self.__index
 
     def __str__(self) -> str:
-        return self._global_id
+        return self.__global_id
 
     @property
     def age(self) -> str:
@@ -70,23 +70,27 @@ class DICOMPatient:
 
     @property
     def ct_from(self) -> str:
-        return self._ct_from
+        return self.__ct_from
 
     @property
     def dataset(self) -> str:
-        return self._dataset
+        return self.__dataset
 
     @property
     def id(self) -> str:
-        return self._id
+        return self.__id
 
     @property
-    def default_rtstruct(self) -> str:
-        return self._default_rtstruct
+    def ct(self) -> str:
+        return self.__default_rtstruct.ref_ct
+
+    @property
+    def rtstruct(self) -> str:
+        return self.__default_rtstruct
 
     @property
     def default_rtdose(self) -> str:
-        return self._default_rtdose
+        return self.__default_rtdose
 
     @property
     def name(self) -> str:
@@ -105,13 +109,13 @@ class DICOMPatient:
         return getattr(self.get_cts()[0], 'PatientWeight', '')
 
     def list_studies(self) -> List[str]:
-        studies = list(sorted(self._index['study-id'].unique()))
+        studies = list(sorted(self.__index['study-id'].unique()))
         return studies
 
     def study(
         self,
         id: str) -> DICOMStudy:
-        return DICOMStudy(self, id, region_map=self._region_map)
+        return DICOMStudy(self, id, region_map=self.__region_map)
 
     def info(self) -> pd.DataFrame:
         # Define dataframe structure.
@@ -147,12 +151,12 @@ class DICOMPatient:
         # TODO: Add configuration to determine which (multiple?) RTSTRUCTs to select.
         study = self.study(self.list_studies()[study_index])
         rt_series = study.series(study.list_series('RTSTRUCT')[rtstruct_index], 'RTSTRUCT')
-        self._default_rtstruct = rt_series
+        self.__default_rtstruct = rt_series
 
     def _load_default_rtdose(self) -> None:
         # Get RTPLAN series linked to the default RTSTRUCT by 'SOPInstanceUID'.
-        def_study = self._default_rtstruct.study
-        def_rt_sop_id = self._default_rtstruct.get_rtstruct().SOPInstanceUID
+        def_study = self.__default_rtstruct.study
+        def_rt_sop_id = self.__default_rtstruct.get_rtstruct().SOPInstanceUID
         rtplan_series_ids = def_study.list_series('RTPLAN')
         linked_rtplan_sop_ids = []
         for rtplan_series_id in rtplan_series_ids:
@@ -176,71 +180,71 @@ class DICOMPatient:
             raise ValueError(f"No RTDOSE linked to default RTPLAN for patient '{self}'.") 
 
         # Select the first RTDOSE as the default.
-        self._default_rtdose = linked_rtdose_series[0]
+        self.__default_rtdose = linked_rtdose_series[0]
 
     # Proxy to default RTSTRUCT series.
 
     @property
     def ct_offset(self):
-        return self._default_rtstruct.ref_ct.offset
+        return self.__default_rtstruct.ref_ct.offset
 
     @property
     def ct_size(self):
-        return self._default_rtstruct.ref_ct.size
+        return self.__default_rtstruct.ref_ct.size
 
     @property
     def ct_spacing(self):
-        return self._default_rtstruct.ref_ct.spacing
+        return self.__default_rtstruct.ref_ct.spacing
 
     def ct_orientation(self, *args, **kwargs):
-        return self._default_rtstruct.ref_ct.orientation(*args, **kwargs)
+        return self.__default_rtstruct.ref_ct.orientation(*args, **kwargs)
 
     def ct_slice_summary(self, *args, **kwargs):
-        return self._default_rtstruct.ref_ct.slice_summary(*args, **kwargs)
+        return self.__default_rtstruct.ref_ct.slice_summary(*args, **kwargs)
 
     def ct_summary(self, *args, **kwargs):
-        return self._default_rtstruct.ref_ct.summary(*args, **kwargs)
+        return self.__default_rtstruct.ref_ct.summary(*args, **kwargs)
 
     @property
     def ct_data(self):
-        return self._default_rtstruct.ref_ct.data
+        return self.__default_rtstruct.ref_ct.data
 
     @property
     def dose_data(self):
-        return self._default_rtdose.data
+        return self.__default_rtdose.data
 
     @property
     def dose_offset(self):
-        return self._default_rtdose.offset
+        return self.__default_rtdose.offset
 
     @property
     def dose_size(self):
-        return self._default_rtdose.size
+        return self.__default_rtdose.size
 
     @property
     def dose_spacing(self):
-        return self._default_rtdose.spacing
+        return self.__default_rtdose.spacing
 
     def get_rtdose(self, *args, **kwargs):
-        return self._default_rtdose_series.get_rtdose(*args, **kwargs)
+        return self.__default_rtdose_series.get_rtdose(*args, **kwargs)
 
     def get_cts(self, *args, **kwargs):
-        return self._default_rtstruct.ref_ct.get_cts(*args, **kwargs)
+        return self.__default_rtstruct.ref_ct.get_cts(*args, **kwargs)
 
     def get_first_ct(self, *args, **kwargs):
-        return self._default_rtstruct.ref_ct.get_first_ct(*args, **kwargs)
+        return self.__default_rtstruct.ref_ct.get_first_ct(*args, **kwargs)
  
     def get_rtstruct(self, *args, **kwargs):
-        return self._default_rtstruct.get_rtstruct(*args, **kwargs)
+        return self.__default_rtstruct.get_rtstruct(*args, **kwargs)
 
     def has_region(self, *args, **kwargs):
-        return self._default_rtstruct.has_region(*args, **kwargs)
+        return self.__default_rtstruct.has_region(*args, **kwargs)
 
     def list_regions(self, *args, **kwargs):
-        return self._default_rtstruct.list_regions(*args, **kwargs)
-
-    def region_data(self, *args, **kwargs):
-        return self._default_rtstruct.region_data(*args, **kwargs)
+        return self.__default_rtstruct.list_regions(*args, **kwargs)
 
     def region_summary(self, *args, **kwargs):
-        return self._default_rtstruct.region_summary(*args, **kwargs)
+        return self.__default_rtstruct.region_summary(*args, **kwargs)
+
+    def region_data(self, *args, **kwargs):
+        return self.__default_rtstruct.region_data(*args, **kwargs)

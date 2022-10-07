@@ -1,4 +1,4 @@
-from .dicom_dataset import DICOMDataset
+from .dicom_dataset import DicomDataset
 from .roi_data import ROIData
 from .rtstruct_converter import RTSTRUCTConverter
 
@@ -8,7 +8,7 @@ from typing import List
 
 from mymi import config
 
-from .dicom_dataset import DICOMDataset
+from .dicom_dataset import DicomDataset
 
 def list() -> List[str]:
     path = os.path.join(config.directories.datasets, 'dicom')
@@ -20,7 +20,7 @@ def list() -> List[str]:
 def create(name: str) -> None:
     ds_path = os.path.join(config.directories.datasets, 'dicom', name)
     os.makedirs(ds_path)
-    return NIFTIDataset(name)
+    return NiftiDataset(name)
 
 def destroy(name: str) -> None:
     ds_path = os.path.join(config.directories.datasets, 'dicom', name)

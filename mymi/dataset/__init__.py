@@ -1,9 +1,9 @@
 from typing import Optional
 
 from .dataset import Dataset, DatasetType, to_type
-from .dicom import DICOMDataset
+from .dicom import DicomDataset
 from .dicom import list as list_dicom
-from .nifti import NIFTIDataset
+from .nifti import NiftiDataset
 from .nifti import list as list_nifti
 from .training import TrainingDataset
 from .training import list as list_training
@@ -20,9 +20,9 @@ def get(
     
         # Create dataset.
         if type == DatasetType.DICOM:
-            return DICOMDataset(name)
+            return DicomDataset(name)
         elif type == DatasetType.NIFTI:
-            return NIFTIDataset(name)
+            return NiftiDataset(name)
         elif type == DatasetType.TRAINING:
             return TrainingDataset(name, check_processed=check_processed)
         elif type == DatasetType.OTHER:
@@ -38,12 +38,12 @@ def get(
         # Preference 2: NIFTI.
         nifti_ds = list_nifti()
         if name in nifti_ds:
-            return NIFTIDataset(name)
+            return NiftiDataset(name)
 
         # Preference 3: DICOM.
         dicom_ds = list_dicom()
         if name in dicom_ds:
-            return DICOMDataset(name)
+            return DicomDataset(name)
 
         # Preference : OTHER.
         other_ds = list_other()
@@ -85,7 +85,7 @@ def active() -> Optional[str]:
     else:
         return None
 
-# DICOMDataset API.
+# DicomDataset API.
 
 def list_patients(*args, **kwargs):
     return ds.list_patients(*args, **kwargs)
@@ -111,7 +111,7 @@ def region_summary(*args, **kwargs):
 def trimmed_errors(*args, **kwargs):
     return ds.trimmed_errors(*args, **kwargs)
 
-# NIFTIDataset API.
+# NiftiDataset API.
 
 def list_patients(*args, **kwargs):
     return ds.list_patients(*args, **kwargs)

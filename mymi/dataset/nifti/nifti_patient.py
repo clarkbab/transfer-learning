@@ -9,7 +9,7 @@ from mymi import types
 class NIFTIPatient:
     def __init__(
         self,
-        dataset: 'NIFTIDataset',
+        dataset: 'NiftiDataset',
         id: types.PatientID):
         self.__dataset = dataset
         self.__id = str(id)
@@ -44,16 +44,18 @@ class NIFTIPatient:
         return self.__id
 
     @property
-    def patient_id(self) -> Optional[str]:
+    def origin(self) -> Optional[str]:
         # Get anon manifest.
         manifest = self.__dataset.anon_manifest
         if manifest is None:
             raise ValueError(f"No anon manifest found for dataset '{self.__dataset}'.")
 
-        # Get patient ID.
+        # Get manifest entry.
         manifest = manifest[manifest['anon-id'] == self.__id]
         if len(manifest) == 0:
             raise ValueError(f"No entry for anon patient '{self.__id}' found in anon manifest for dataset '{self.__dataset}'.")
+
+        # Get patient ID.
         pat_id = manifest.iloc[0]['patient-id']
 
         return pat_id
@@ -96,7 +98,7 @@ class NIFTIPatient:
         return region in self.list_regions()
 
     @property
-    def ct_spacing(self) -> types.ImageSpacing3D:
+    def spacing(self) -> types.ImageSpacing3D:
         path = os.path.join(self.__dataset.path, 'data', 'ct', f"{self.__id}.nii.gz")
         img = nib.load(path)
         affine = img.affine
@@ -104,7 +106,7 @@ class NIFTIPatient:
         return spacing
 
     @property
-    def ct_offset(self) -> types.Point3D:
+    def offset(self) -> types.Point3D:
         path = os.path.join(self.__dataset.path, 'data', 'ct', f"{self.__id}.nii.gz")
         img = nib.load(path)
         affine = img.affine
@@ -119,7 +121,7 @@ class NIFTIPatient:
         return data
 
     @property
-    def ct_size(self) -> np.ndarray:
+    def size(self) -> np.ndarray:
         return self.ct_data.shape
 
     def region_data(

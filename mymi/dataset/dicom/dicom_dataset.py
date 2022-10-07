@@ -23,7 +23,7 @@ from .region_map import RegionMap
 
 Z_SPACING_ROUND_DP = 2
 
-class DICOMDataset(Dataset):
+class DicomDataset(Dataset):
     def __init__(
         self,
         name: str):
@@ -36,7 +36,7 @@ class DICOMDataset(Dataset):
             if match:
                 ct_from_name = match.group(1)
 
-        self._ct_from = DICOMDataset(ct_from_name) if ct_from_name is not None else None
+        self._ct_from = DicomDataset(ct_from_name) if ct_from_name is not None else None
         self._global_id = f"DICOM: {name}"
         self._global_id = self._global_id + f" (CT from - {self._ct_from})" if self._ct_from is not None else self._global_id
         self._name = name
@@ -74,7 +74,7 @@ class DICOMDataset(Dataset):
         return self._global_id
 
     @property
-    def ct_from(self) -> Optional['DICOMDataset']:
+    def ct_from(self) -> Optional['DicomDataset']:
         return self._ct_from
 
     @property

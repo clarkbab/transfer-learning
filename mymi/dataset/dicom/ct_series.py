@@ -77,6 +77,7 @@ class CTSeries(DICOMSeries):
         offset = tuple(int(s) for s in offset)
         return offset
 
+    @property
     def orientation(self) -> types.ImageSpacing3D:
         cts = self.get_cts()
 

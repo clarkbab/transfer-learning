@@ -10,7 +10,7 @@ from mymi.utils import append_row, load_csv
 from ..dataset import Dataset, DatasetType
 from .nifti_patient import NIFTIPatient
 
-class NIFTIDataset(Dataset):
+class NiftiDataset(Dataset):
     def __init__(
         self,
         name: str):

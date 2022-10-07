@@ -52,7 +52,7 @@ class DICOMStudy:
         self,
         modality: str) -> List[str]:
         index = self._index
-        index = index[index.modality == modality]
+        index = index[index.modality == modality.upper()]
         series = list(sorted(index['series-id'].unique()))
         return series
 
@@ -61,13 +61,13 @@ class DICOMStudy:
         id: str,
         modality: str,
         **kwargs: Dict) -> DICOMSeries:
-        if modality == 'CT':
+        if modality.upper() == 'CT':
             return CTSeries(self, id, **kwargs)
-        elif modality == 'RTSTRUCT':
+        elif modality.upper() == 'RTSTRUCT':
             return RTSTRUCTSeries(self, id, region_map=self._region_map, **kwargs)
-        elif modality == 'RTPLAN':
+        elif modality.upper() == 'RTPLAN':
             return RTPLANSeries(self, id, **kwargs)
-        elif modality == 'RTDOSE':
+        elif modality.upper() == 'RTDOSE':
             return RTDOSESeries(self, id, **kwargs)
         else:
             raise ValueError(f"Unrecognised DICOM modality '{modality}'.")

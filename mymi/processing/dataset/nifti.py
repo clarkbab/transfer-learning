@@ -11,8 +11,8 @@ from typing import List, Optional, Union
 
 from mymi import config
 from mymi import dataset as ds
-from mymi.dataset.dicom import DICOMDataset, ROIData, RTSTRUCTConverter
-from mymi.dataset.nifti import NIFTIDataset
+from mymi.dataset.dicom import DicomDataset, ROIData, RTSTRUCTConverter
+from mymi.dataset.nifti import NiftiDataset
 from mymi.dataset.training import create, exists, get, recreate
 from mymi.loaders import Loader
 from mymi import logging
@@ -88,7 +88,7 @@ def convert_to_training(
             params_df.to_csv(filepath)
 
     # Load patients.
-    set = NIFTIDataset(dataset)
+    set = NiftiDataset(dataset)
     pat_ids = set.list_patients()
 
     # Create index.
@@ -254,9 +254,9 @@ def convert_segmenter_predictions_to_dicom_aggregate(
 
     for dataset, pat_id in tqdm(list(zip(datasets, pat_ids))):
         # Get ROI ID from DICOM dataset.
-        nifti_set = NIFTIDataset(dataset)
+        nifti_set = NiftiDataset(dataset)
         pat_id_dicom = nifti_set.patient(pat_id).patient_id
-        set_dicom = DICOMDataset(dataset)
+        set_dicom = DicomDataset(dataset)
         patient_dicom = set_dicom.patient(pat_id_dicom)
         rtstruct_gt = patient_dicom.default_rtstruct.get_rtstruct()
         info_gt = RTSTRUCTConverter.get_roi_info(rtstruct_gt)
@@ -398,9 +398,9 @@ def convert_segmenter_predictions_to_dicom_from_loader(
     # Create prediction RTSTRUCTs.
     for dataset, pat_id_nifti in tqdm(samples):
         # Get ROI ID from DICOM dataset.
-        nifti_set = NIFTIDataset(dataset)
+        nifti_set = NiftiDataset(dataset)
         pat_id_dicom = nifti_set.patient(pat_id_nifti).patient_id
-        set_dicom = DICOMDataset(dataset)
+        set_dicom = DicomDataset(dataset)
         patient_dicom = set_dicom.patient(pat_id_dicom)
         rtstruct_gt = patient_dicom.default_rtstruct.get_rtstruct()
         info_gt = RTSTRUCTConverter.get_roi_info(rtstruct_gt)

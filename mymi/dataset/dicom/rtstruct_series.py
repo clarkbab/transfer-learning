@@ -108,40 +108,6 @@ class RTSTRUCTSeries(DICOMSeries):
 
         return roi_info
 
-    def list_regions(
-        self,
-        use_mapping: bool = True,
-        whitelist: types.PatientRegions = 'all') -> List[str]:
-        # Load RTSTRUCT dicom.
-        rtstruct = self.get_rtstruct()
-
-        # Get region names.
-        names = list(sorted(RTSTRUCTConverter.get_roi_names(rtstruct)))
-
-        # Filter names on those for which data can be obtained, e.g. some may not have
-        # 'ContourData' and shouldn't be included.
-        names = list(filter(lambda n: RTSTRUCTConverter.has_roi_data(rtstruct, n), names))
-
-        # Map to internal names.
-        if use_mapping and self.__region_map:
-            names = [self.__region_map.to_internal(n) for n in names]
-
-        # Filter on whitelist.
-        def filter_fn(region):
-            if isinstance(whitelist, str):
-                if whitelist == 'all':
-                    return True
-                else:
-                    return region == whitelist
-            else:
-                if region in whitelist:
-                    return True
-                else:
-                    return False
-        names = list(filter(filter_fn, names))
-
-        return names
-
     def has_region(
         self,
         region: str,

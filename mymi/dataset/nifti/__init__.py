@@ -4,7 +4,7 @@ from typing import List
 
 from mymi import config
 
-from .nifti_dataset import NIFTIDataset
+from .nifti_dataset import NiftiDataset
 
 def list() -> List[str]:
     path = os.path.join(config.directories.datasets, 'nifti')
@@ -16,7 +16,7 @@ def list() -> List[str]:
 def create(name: str) -> None:
     ds_path = os.path.join(config.directories.datasets, 'nifti', name)
     os.makedirs(ds_path)
-    return NIFTIDataset(name)
+    return NiftiDataset(name)
 
 def destroy(name: str) -> None:
     ds_path = os.path.join(config.directories.datasets, 'nifti', name)

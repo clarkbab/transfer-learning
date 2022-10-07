@@ -28,7 +28,7 @@ class Directories:
 
     @property
     def root(self):
-        return os.environ['MYMI_DATA']
+        return os.environ['TL_DATA']
 
     @property
     def runs(self):
