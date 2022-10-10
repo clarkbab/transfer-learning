@@ -1,22 +1,21 @@
 import nibabel as nib
 from nibabel.nifti1 import Nifti1Image
 import numpy as np
-import pandas as pd
-import pydicom as dcm
 import os
-import shutil
 from tqdm import tqdm
-from typing import Callable
 
-from mymi import logging
+from mymi.dataset.dicom import DicomDataset
+from mymi.dataset.nifti import recreate as recreate_nifti
+from mymi.regions import RegionNames
 from mymi import types
-
-from ..nifti import recreate as recreate_nifti
-from .dicom_dataset import DicomDataset
+from mymi.utils import filter_list
 
 def convert_to_nifti(
     dataset: str,
     regions: types.PatientRegions = 'all') -> None:
+    if regions == 'all':
+        regions = RegionNames
+
     # Load all patients.
     set = DicomDataset(dataset)
     pats = set.list_patients(regions=regions)
@@ -36,15 +35,16 @@ def convert_to_nifti(
             [0, 0, spacing[2], offset[2]],
             [0, 0, 0, 1]])
         img = Nifti1Image(data, affine)
-        filepath = os.path.join(nifti_ds.path, 'ct', f'{pat}.nii.gz')
+        filepath = os.path.join(nifti_set.path, 'ct', f'{pat}.nii.gz')
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
         nib.save(img, filepath)
 
         # Create region NIFTIs.
-        pat_regions = patient.list_regions(whitelist=regions)
+        pat_regions = patient.list_regions()
+        pat_regions = filter_list(pat_regions, regions)
         region_data = patient.region_data(regions=pat_regions)
         for region, data in region_data.items():
             img = Nifti1Image(data.astype(np.int32), affine)
-            filepath = os.path.join(nifti_ds.path, region, f'{pat}.nii.gz')
+            filepath = os.path.join(nifti_set.path, region, f'{pat}.nii.gz')
             os.makedirs(os.path.dirname(filepath), exist_ok=True)
             nib.save(img, filepath)

@@ -5,9 +5,7 @@ import sys
 root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 sys.path.append(root_dir)
 
-from mymi.utilities import download_reports
+from mymi.loaders import get_loader_n_train
 
-fire.Fire(download_reports)
-
-# Sample args:
-# --datasets "('HN1','HNPCT','HNSCC','OPC')"
+if __name__ == '__main__':
+    fire.Fire(get_loader_n_train)

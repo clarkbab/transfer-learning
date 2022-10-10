@@ -26,13 +26,13 @@ from mymi.utils import append_row
 
 def convert_to_training(
     dataset: str,
-    regions: types.PatientRegions,
     dest_dataset: str,
     create_data: bool = True,
     dilate_iter: int = 3,
     dilate_regions: List[str] = [],
     log_warnings: bool = False,
     recreate_dataset: bool = True,
+    regions: types.PatientRegions = 'all',
     round_dp: Optional[int] = None,
     size: Optional[types.ImageSize3D] = None,
     spacing: Optional[types.ImageSpacing3D] = None) -> None:

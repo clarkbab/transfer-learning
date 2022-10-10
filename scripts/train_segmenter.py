@@ -9,6 +9,3 @@ from mymi.training import train_segmenter
 
 if __name__ == '__main__':
     fire.Fire(train_segmenter)
-
-# Sample args:
-# --datasets "['HN1-SEG','HNSCC-SEG']" --n_gpus 4 --n_nodes 1 --n_workers 4 --use_logger True

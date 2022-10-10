@@ -1,7 +1,7 @@
 import subprocess
 
-regions = '12-15'
-script = 'scripts/train/segmenter/spartan/array/train_segmenter'
+regions = '0-16'
+script = 'scripts/train/segmenter/slurm/array/train_segmenter'
 test_folds = [0, 1, 2, 3, 4]
 models = ['clinical', 'transfer']
 n_trains = [5, 10, 20, 50, 100, 200, None]

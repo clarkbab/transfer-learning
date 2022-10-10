@@ -3,10 +3,9 @@
 ## Installation
 
 1. Install python (v3.8.2) using [virtualenv](https://virtualenv.pypa.io/en/latest/) or other tool.
-
 2. Install python packages.
 ```
-pip install --requirements requirements.txt
+pip install -r requirements.txt
 ```
 
 3. Set data folder. All training data, models, etc. will live here. Run this command in your bash terminal or add to your profile for something more permanent.
@@ -14,132 +13,42 @@ pip install --requirements requirements.txt
 export TL_DATA=<data-dir>
 ```
 
-## Experiment
+## Transfer Learning Experiment
 
-1. Download public datasets from TCIA. If using pre-trained models skip to step ... below.
-2. Add public datasets to `<data-dir>/datasets/dicom/` as outlined in ...
-3. Symlink region maps (see section).
-4. Process public DICOM datasets using:
+The preferred method for running this experiment is with access to a Slurm-managed high-performance computing cluster. Scripts are provided in [scripts/slurm](scripts/slurm) to create jobs with minimal editing of scripts required - please see instructions in files. Otherwise, python scripts can be found in [scripts/steps](scripts/steps) and should be modified to run on your preferred training platform.
 
-```
-from mymi.dataset.dicom import convert_to_nifti
+Note that all scripts should be run from the root project folder (e.g. `python scripts/slurm/step_4/create_jobs.py`).
 
-public_datasets = ['HN1', 'HNPCT', 'HNSCC', 'OPC']
+### Transfer Learning Experiment - Steps
 
-# Process datasets - do this in parallel in reality.
-for dataset in public_datasets:
-    convert_to_nifti(dataset, regions='all', anonymise=False)
-```
+1. Download TCIA datasets. If using pre-trained models skip to step ... below.
+- [Head-Neck-Radiomics-HN1](https://wiki.cancerimagingarchive.net/display/Public/Head-Neck-Radiomics-HN1)
+- [Head-Neck-PET-CT](https://wiki.cancerimagingarchive.net/display/Public/Head-Neck-PET-CT)
+- [HNSCC](https://wiki.cancerimagingarchive.net/display/Public/HNSCC)
+- [OPC-Radiomics](https://wiki.cancerimagingarchive.net/pages/viewpage.action?pageId=33948764)
+2. Create DICOM datasets from public datasets as outlined in [DICOM Dataset - Setup](#dicom-dataset-setup). These should be named HN1, HNPCT, HNSCC and OPC.
+3. Symlink region maps as outlined in [DICOM Dataset - Region Maps](#dicom-dataset-region-maps).
+4. Process public DICOM datasets using the [slurm script](scripts/slurm/step_4/create_jobs.py) (creates 4 jobs) or by modifying the [python code](scripts/steps/step_4.py).
+5. Create public training data for localiser/segmenter networks using the [slurm script](scripts/slurm/step_5/create_jobs.py) (creates 4 jobs) or by modifying the [python code](scripts/steps/step_5.py).
+6. Train separate public localiser/segmenter networks per region using the [slurm script](scripts/slurm/step_6/create_jobs.py) (creates 34 jobs; 2 array jobs of length 17) or by modifying the [python code](scripts/steps/step_6.py).
+- Training can be resumed upon failure using the [slurm script](scripts/slurm/step_6/create_resume_job.py) (creates 1 job) or by modifying the [python code](scripts/steps/step_6_resume.py).
+7. Create the institutional ([NIFTI](#nifti-dataset-setup) or [DICOM](#dicom-dataset-setup)) dataset with name 'INST' from your institutional dataset or another TCIA dataset.
+8. Process DICOM dataset to NIFTI if required using the [slurm script](scripts/slurm/step_8/create_job.py) (creates 1 job) or by modifying the [python code](scripts/steps/step_8.py).
+9. Create institutional training data for segmenter networks using the [slurm script](scripts/slurm/step_9/create_job.py) (creates 1 job) or by modifyting the [python code](scripts/steps/step_9.py).
+10. Train separate institutional segmenter networks per region for increasing sample sizes (e.g. n=5,10,20,50,...,'max') using the [slurm script](scripts/slurm/step_10/create_jobs.py) (creates x jobs) or by modifying the [python code](scripts/steps/step_10.py).
+11. This step requires the completion of public segmenter training (step 6). Train separate transfer segmenter networks per region for increasing sample sizes (e.g. n=5,10,20,50,...,'max') using the [slurm script](scripts/slurm/step_11/create_jobs.py) (creates x jobs) or by modifying the [python code](scripts/steps/step_11.py).
 
-5. Create public training data for localiser/segmenter networks:
-
-```
-from mymi.dataset.nifti import convert_to_training
-
-public_datasets = ['HN1', 'HNPCT', 'HNSCC', 'OPC']
-dilate_regions = ['BrachialPlexus_L', 'BrachialPlexus_R', 'Cochlea_L', 'Cochlea_R', 'Lens_L', 'Lens_R', 'OpticNerve_L', 'OpticNerve_R']
-
-# Process datasets - do this in parallel in reality.
-for dataset in public_datasets:
-    # Create data for localiser.
-    convert_to_training(dataset, 'all', f'{dataset}-LOC', dilate_regions=dilate_regions, size=(128, 128, 150), spacing=(4, 4, 4))
-
-    # Create data for segmenter.
-    convert_to_training(dataset, 'all', f'{dataset}-SEG', size=None, spacing=(1, 1, 2))
-```
-
-6. Train separate public localiser/segmenter networks per region.
-
-```
-from mymi.training.localiser import train_localiser
-from mymi.regions import RegionNames
-
-loc_datasets = ['HN1-LOC', 'HNPCT-LOC', 'HNSCC-LOC', 'OPC-LOC']
-seg_datasets = ['HN1-SEG', 'HNPCT-SEG', 'HNSCC-SEG', 'OPC-SEG']
-
-# Train localiser/segmenter network per region - in reality this would be performed across multiple machines.
-for region in RegionNames:
-    # Train localiser network.
-    train_localiser(loc_datasets, region, f'localiser-{region}', 'public-1gpu-150epochs', n_epochs=150)
-
-    # Train segmenter network.
-    train_segmenter(seg_datasets, region, f'segmenter-{region}', 'public-1gpu-150epochs', n_epochs=150)
-```
-
-Training can be resumed upon failure using:
-
-```
-from mymi.training.localiser import train_localiser
-from mymi.training import train
-
-models = ['localiser', 'segmenter']
-datasets = {
-    'localiser': ['HN1-LOC', 'HNPCT-LOC', 'HNSCC-LOC', 'OPC-LOC']
-    'segmenter': ['HN1-SEG', 'HNPCT-SEG', 'HNSCC-SEG', 'OPC-SEG']
-}
-region = 'Brain'
-
-# For failed localiser.
-train(datasets, region, f'localiser-{region}', 'public-1gpu-150epochs', n_epochs=150, resume=True, resume_checkpoint='last')
-
-# For failed segmenter.
-train_segmenter(datasets, region, f'segmenter-{region}', 'public-1gpu-150epochs', n_epochs=150, resume=True, resume_checkpoint='last')
-```
-
-def train_localiser(
-    model_name: str,
-    run_name: str,
-    datasets: Union[str, List[str]],
-    region: str,
-    loss: str = 'dice',
-    n_epochs: int = 200,
-    n_folds: Optional[int] = None,
-    n_gpus: int = 1,
-    n_nodes: int = 1,
-    n_train: Optional[int] = None,
-    n_workers: int = 1,
-    pretrained: Optional[Tuple[str, str, str]] = None,
-    p_val: float = 0.2,
-    resume: bool = False,
-    resume_checkpoint: Optional[str] = None,
-    slurm_job_id: Optional[str] = None,
-    slurm_array_job_id: Optional[str] = None,
-    slurm_array_task_id: Optional[str] = None,
-    test_fold: Optional[int] = None,
-    use_logger: bool = False) -> None:
-def train_segmenter(
-    datasets: Union[str, List[str]],
-    region: str,
-    model: str,
-    run: str,
-    loss: str = 'dice',
-    n_epochs: int = 200,
-    n_folds: Optional[int] = 5,
-    n_gpus: int = 1,
-    n_nodes: int = 1,
-    n_train: Optional[int] = None,
-    n_workers: int = 1,
-    pretrained_model: Optional[types.ModelName] = None,    
-    p_val: float = 0.2,
-    resume: bool = False,
-    resume_run: Optional[str] = None,
-    resume_ckpt: str = 'last',
-    slurm_job_id: Optional[str] = None,
-    slurm_array_job_id: Optional[str] = None,
-    slurm_array_task_id: Optional[str] = None,
-    test_fold: Optional[int] = None,
-    use_logger: bool = False) -> None:
 ## Datasets
 
-### DICOM Datasets
+### DICOM Dataset
 
-#### Setup
+#### DICOM Dataset - Setup
 
 To add a DICOM dataset, drop all data into the folder `<data-dir>/datasets/dicom/<dataset>/data` where `<dataset>` is the name of your dataset as it will appear in the `Dataset` API.
 
 Note that *no dataset file structure* is enforced as the indexing engine will traverse the folder, locating all DICOM files, and creating an index (at `<dataset>/index.csv`) that will be used by the `Dataset` API to make queries on the dataset.
 
-#### Index
+#### DICOM Dataset - Index
 
 The index is built when a dataset is first used via the `Dataset` API. Indexing can also be triggered via the command:
 
@@ -164,7 +73,7 @@ The index object hierarchy is:
         ...
 ```
 
-##### Index Exclusion Criteria
+##### DICOM Dataset - Index - Exclusion Criteria
 
 The following rules are applied *in order* to exclude objects from the index. All excluded objects are saved in `index-errors.csv` with the applicable error code.
 
@@ -185,17 +94,17 @@ Order | Code | Description
 
 Feel free to add/remove/update these criteria by modifying the file at `mymi/dataset/dicom/index.py`.
 
-#### Region maps
+#### DICOM Dataset - Region Maps
 
 If your datasets have inconsistent organ-at-risk (region) names, you can apply a region map to map from many values in the dataset to a single internal name. Many examples are shown in `mymi/dataset/dicom/files/region-maps` for the public datasets from this study.
 
 Add the region map at `<dataset>/region-map.csv`. The map must contain a `dataset` column with region names as they appear in the dataset (regexp capable) and an `internal` column with the internal name to map to. An optional column `case-sensitive` specifies whether the `dataset` column is case sensitive (default=False).
 
-#### API
+#### DICOM Dataset - API
 
 If there are multiple studies/RTSTRUCTs for a patient, the first study and RTSTRUCT are chosen as the default. To set different defaults, pass `study_index` and `rtstruct_index` kwargs upon patient creation (e.g. `set.patient('<patient-id>', study_index=1, rtstruct_index=2))`. The default CT is always the CT series attached to the default RTSTRUCT series.
 
-##### API - Datasets
+##### DICOM Dataset - API - Datasets
 
 ```
 from mymi import dataset as ds
@@ -210,7 +119,7 @@ set = ds.get('<dataset>')           # Will raise an error if there are multiple 
 set = DicomDataset('<dataset>')     # Using constructor directly.
 ```
 
-##### API - Patients
+##### DICOM Dataset - API - Patients
 
 ```
 from mymi import dataset as ds
@@ -235,7 +144,7 @@ pat.ct_data
 pat.region_data(regions=['Brain', 'BrainStem'])
 ```
 
-##### API - Studies
+##### DICOM Dataset - API - Studies
 ```
 from mymi import dataset as ds
 
@@ -249,7 +158,7 @@ pat.list_studies()
 pat.study('<study-id>')
 ```
 
-##### API - Series
+##### DICOM Dataset - API - Series
 ```
 from mymi import dataset as ds
 
@@ -265,7 +174,7 @@ study.list_series('rtstruct')
 study.series('<series-id>')
 ```
 
-###### API - CT Series
+###### DICOM Dataset - API - CT Series
 ```
 from mymi import dataset as ds
 
@@ -287,7 +196,7 @@ series.get_cts()
 series.get_first_ct()       # If reading duplicated fields (e.g. PatientName) just load the first one.
 ```
 
-###### API - RTSTRUCT Series
+###### DICOM Dataset - API - RTSTRUCT Series
 ```
 from mymi import dataset as ds
 
@@ -309,7 +218,7 @@ series.region_data(regions=['Brain', 'BrainStem'])
 series.get_rtstruct()
 ```
 
-###### API - RTPLAN Series
+###### DICOM Dataset - API - RTPLAN Series
 ```
 from mymi import dataset as ds
 
@@ -322,7 +231,7 @@ series = study.series('<series-id>')
 series.get_rtplan()
 ```
 
-###### API - RTDOSE Series
+###### DICOM Dataset - API - RTDOSE Series
 ```
 from mymi import dataset as ds
 
@@ -343,13 +252,13 @@ series.orientation
 series.get_rtdose()
 ```
 
-### NIFTI Datasets
+### NIFTI Dataset
 
-#### Setup
+#### NIFTI Dataset - Setup
 
 NIFI datasets can be created by processing an existing DICOM dataset or by manually creating a folder of the correct structure.
 
-##### Processing DICOM
+##### NIFTI Dataset - Setup - Processing DICOM
 
 We can process the CT/region data from an existing `DicomDataset` into a `NiftiDataset` using the following command. We can specify the subset of regions which we'd like to include in our `NiftiDataset` and also whether to anonymise patient IDs (for transferral to external system for training/evaluation, e.g. high-performance computing cluster).
 
@@ -361,7 +270,7 @@ convert_to_nifti('<dataset>', regions=['Brain, 'BrainStem'], anonymise=False)
 
 When anonymising, a map back to the true patient IDs will be saved in `<data-dir>/files/anon-maps/<dataset>.csv`.
 
-##### Manual Creation
+##### NIFTI Dataset - Setup - Manual Creation
 
 NIFTI datasets can be created by adding CT and region NIFTI files to a folder `<data-dir>/datasets/dicom/<dataset>/data` with the following structure:
 
@@ -381,9 +290,9 @@ NIFTI datasets can be created by adding CT and region NIFTI files to a folder `<
                 - ...
 ```
 
-#### API
+#### NIFTI Dataset - API
 
-##### API - Datasets
+##### NIFTI Dataset - API - Datasets
 
 ```
 from mymi import dataset as ds
@@ -398,7 +307,7 @@ set = ds.get('<dataset>')           # Will raise an error if there are multiple 
 set = NiftiDataset('<dataset>')     # Using constructor directly.
 ```
 
-##### API - Patients
+##### NIFTI Dataset - API - Patients
 
 ```
 from mymi import dataset as ds

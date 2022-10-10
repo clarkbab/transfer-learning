@@ -11,7 +11,7 @@ from typing import List, Optional, Tuple, Union
 from mymi import config
 from mymi import dataset as ds
 from mymi.dataset.training import exists
-from mymi.loaders import Loader
+from mymi.loaders import Loader, get_loader_n_train
 from mymi import logging
 from mymi.losses import DiceLoss
 from mymi.models.systems import Segmenter
@@ -69,6 +69,11 @@ def train_segmenter(
         scales=scale,
         translation=translation,
         default_pad_value='minimum')
+
+    # Check that data loader has requested number of samples.
+    max_n_train = get_loader_n_train(datasets, region, n_folds=n_folds, test_fold=test_fold)
+    if type(n_train) == int and n_train >= max_n_train:
+        raise ValueError(f"Loader doesn't have requested number of training samples '{n_train}'. Max '{max_n_train}'.")
 
     # Create data loaders.
     loaders = Loader.build_loaders(datasets, region, extract_patch=True, n_folds=n_folds, n_train=n_train, n_workers=n_workers, p_val=p_val, spacing=spacing, test_fold=test_fold, transform=transform)

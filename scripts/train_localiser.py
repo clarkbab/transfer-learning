@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import fire
 import os
 import sys
@@ -10,6 +9,3 @@ from mymi.training import train_localiser
 
 if __name__ == '__main__':
     fire.Fire(train_localiser)
-
-# Sample args:
-# --datasets "['HN1-LOC','HNSCC-LOC']" --n_gpus 4 --n_nodes 1 --n_workers 4 --use_logger True

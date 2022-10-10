@@ -17,6 +17,11 @@ def append_row(df: pd.DataFrame, data: Dict[str, Union[str, int, float]]) -> pd.
 def encode(o: Any) -> str:
     return hashlib.sha1(json.dumps(o).encode('utf-8')).hexdigest()
 
+def filter_list(a: List[Union[int, float, str]], b: Union[Union[int, float, str], List[int, float, str]]) -> List:
+    if type(b) == int or type(b) == float or type(b) == str:
+        b = [b]
+    return list(filter(a, lambda c: c in b))
+
 # Commented due to circular import.
 # def get_manifest():
 #     datasets = ['PMCC-HN-TEST-LOC', 'PMCC-HN-TRAIN-LOC']
